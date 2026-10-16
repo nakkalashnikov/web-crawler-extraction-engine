@@ -28,9 +28,9 @@ The architecture consists of two decoupled, high-resilience microservices design
                  ▼                                       ▼
     [ Third-Party Target Web ]              [ Rate-Limited Gateway ]
     (curl_cffi Chrome Impersonation)        (Token Bucket / Sliding Window)
-    • Direct HTML + JSON-LD                 • Multi-Key Fair Distribution
+    • Direct HTML + JSON-LD                 • Global RPM Rate Enforcement
     • Social Metadata & oEmbed              • Global 429 Penalty Pause
-    • Video / Media Embed Signals           • Automatic Fallback / Retries
+    • Video / Media Embed Signals           • Backoff Retries with Jitter
                  │                                       │
                  └───────────────────┬───────────────────┘
                                      │
@@ -50,10 +50,10 @@ Located in `services/rate-limited-search-gateway/`:
   * Guarantees hard throughput limits (e.g., max 60 req/min) across arbitrary concurrency levels.
 * **429 Global Pause (`penalize()`):**
   * Parses upstream `Retry-After` headers and pauses **all** concurrent callers simultaneously.
-  * Solves the **thundering herd / retry storm problem**, preventing IP-level or account-level bans.
-* **Weighted Multi-Key Pool with Concurrency Semaphores (`keys.py`, `search.py`):**
-  * Individual `asyncio.Semaphore` per API key, held continuously across exponential backoffs.
-  * Separate handling for transient throttles (429: backoff with jitter on same key) vs permanent quota exhaustion (432: immediate rotation to next tier).
+  * Solves the **thundering herd / retry storm problem**, preventing IP-level or account-level lockouts.
+* **Resilient Execution Engine (`search.py`, `extract.py`):**
+  * Handles transient network hiccups and transport errors with exponential backoff and randomized jitter.
+  * Ensures strict decoupling between request concurrency and upstream throughput limits.
 
 ### 2. `Stealth Source Extractor`
 Located in `services/stealth-source-extractor/`:
