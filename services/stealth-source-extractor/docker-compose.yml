@@ -1,0 +1,14 @@
+services:
+  source-extract:
+    profiles: [dev]
+    # Build context is the repo root, not this directory (unlike most
+    # workers) — this worker calls tavily-search over HTTP via the flat
+    # client workers/tavily_search.py, which lives outside this directory
+    # and must be present in the image for `from workers import
+    # tavily_search` to resolve. See Dockerfile.
+    build:
+      context: ../..
+      dockerfile: workers/source-extract/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8028:8000"

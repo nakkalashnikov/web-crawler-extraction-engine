@@ -1,0 +1,8 @@
+services:
+  tavily-search:
+    profiles: [dev]
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8018:8000"
+    env_file: .env
